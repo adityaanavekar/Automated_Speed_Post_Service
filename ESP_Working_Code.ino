@@ -17,7 +17,7 @@ const char* post_endpoint = "/upload";
 const int LOADCELL_DOUT_PIN = 13;
 const int LOADCELL_SCK_PIN = 12;
 HX711 scale;
-const float calibration_factor = -437; // Adjust based on your load cell calibration
+const float calibration_factor = -431; // Adjust based on your load cell calibration
 
 // Button pin
 const int BUTTON_PIN = 14;
