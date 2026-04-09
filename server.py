@@ -10,9 +10,9 @@ from selenium.webdriver.support import expected_conditions as EC
 import requests
 
 # ------------------- CONFIG -------------------
-GEMINI_API_KEY = "AIzaSyAeeBWtd0rRFASukvtCYnYfppZT-9mQvn0"  # Your API key
+GEMINI_API_KEY = "AIzaSyC_9QNIk_likf5B2ph2Pxm0Z2QgXS6SdQQ"  # Your API key
 DISTANCEMATRIX_API_KEY = "L1fDShZvYFwpK4iZIn5IzZ7rj1kdrDs5tYrbl8liQZc1IoCRpkLwUONBIqeOF5Vb"  # Replace with your DistanceMatrix.ai API key. To set up: Sign up at https://distancematrix.ai/, verify email, and get your free API key (1,000 elements/month free). No credit card required.
-WEBPAGE_URL = "https://booking-website-v9ke.vercel.app/"
+WEBPAGE_URL = "https://booking-website-ginj.onrender.com/"
 
 # Flask app
 app = Flask(__name__)
@@ -48,12 +48,59 @@ def upload_image():
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")  # Updated model
         prompt = (
-            "Extract postal sender and receiver addresses as JSON only. "
-            "Use this structure: {"
-            "'from': {'first_name': '', 'last_name': '', 'address': '', 'city': '', 'state': '', 'pincode': '', 'mobile': ''}, "
-            "'to': {'first_name': '', 'last_name': '', 'address': '', 'city': '', 'state': '', 'pincode': '', 'mobile': ''}"
-            "}"
+            "You are an expert Indian postal address extractor and corrector. "
+"Carefully read the image (which may contain handwritten or printed sender and receiver addresses). "
+
+"STEP 1: Perform highly accurate OCR extraction. "
+
+"STEP 2: Apply intelligent auto-correction for common Indian address spelling mistakes, typos, and formatting issues "
+"(examples: 'Banglore'→'Bengaluru', 'Hydrabad'→'Hyderabad', 'Mumbi'→'Mumbai', 'Delhii'→'Delhi', 'Colny'→'Colony', 'Sociaty'→'Society', "
+"'Street'/'Strret'→'Street', 'Road'/'Rod'→'Road', 'Ngr'→'Nagar', 'Vihar'/'Viharh'→'Vihar', 'Phase'/'Phse'→'Phase', "
+"'Apartment'/'Appartment'→'Apartment', 'Near'/'Ner'→'Near', etc.). "
+
+"Also standardize common abbreviations intelligently (e.g., 'Rd' → 'Road', 'St' → 'Street', 'Col' → 'Colony' only if it makes sense). "
+
+"CRITICAL RULE: Do NOT change the actual meaning or add extra information — only fix spelling, typos, and minor formatting for better postal delivery. "
+"If the text is unclear, make your best reasonable correction based on common Indian address patterns. "
+
+"Ensure strict consistency rules: "
+"- City and State must always match logically. "
+"- If mismatch occurs, correct based on best logical assumption using Indian geography knowledge. "
+
+"PIN CODE INTELLIGENCE (VERY STRICT - MUST FOLLOW): "
+"1. If a valid PIN code is present → Use it to validate and correct City and State. "
+"2. If PIN code is missing OR invalid OR incomplete → You MUST infer the correct PIN using City + State. "
+"3. ALWAYS choose the most commonly used / central / head post office (GPO) PIN for that city. "
+"4. NEVER choose rare or locality-specific PINs. "
+"5. ENSURE the PIN strictly belongs to the correct state. "
+"6. Examples (must follow pattern): "
+"   Bengaluru, Karnataka → 560001 "
+"   Hyderabad, Telangana → 500001 "
+"   Mumbai, Maharashtra → 400001 "
+"   Chennai, Tamil Nadu → 600001 "
+"   Delhi → 110001 "
+"   Pune, Maharashtra → 411001 "
+
+"PARTIAL / INCORRECT PIN CORRECTION (MANDATORY): "
+"- If PIN has OCR mistakes (e.g., '5600O1', '56OOO1', '56010', etc.), you MUST fix it. "
+"- Use pattern recognition (digits only, 6-digit format) + City/State context. "
+"- Replace common OCR errors like 'O' → '0', 'I' → '1'. "
+"- If still ambiguous → fallback to correct central PIN of that city. "
+
+"Mobile number rules: "
+"- Extract only valid 10-digit Indian numbers. "
+"- Remove spaces, country codes (+91), or formatting. "
+
+"FINAL OUTPUT RULES (STRICT): "
+"- Output ONLY clean JSON. "
+"- No explanations, no markdown, no extra text. "
+"- Ensure all corrected fields are logically consistent and complete. "
+
+"Use exactly this structure:\n\n"
+"{'from': {'first_name': '', 'last_name': '', 'address': '', 'city': '', 'state': '', 'pincode': '', 'mobile': ''}, "
+"'to': {'first_name': '', 'last_name': '', 'address': '', 'city': '', 'state': '', 'pincode': '', 'mobile': ''}}"
         )
+        
         response = model.generate_content([
             {"mime_type": "image/jpeg", "data": image_bytes},
             {"text": prompt}
